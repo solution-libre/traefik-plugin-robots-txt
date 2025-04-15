@@ -1,12 +1,10 @@
-displayName: Demo Plugin
+displayName: Robots.txt Plugin
 type: middleware
 iconPath: .assets/icon.png
 
-import: github.com/traefik/plugindemo
+import: github.com/solution-libre/traefik-plugin-robots-txt
 
-summary: '[Demo] Add Request Header'
+summary: 'Traefik plugin to create, overwrite or complete the robots.txt file'
 
 testData:
-  Headers:
-    X-Demo: test
-    X-URL: '{{URL}}'
+  AdditionalRules: "\nUser-agent: *\nDisallow: /private/\n"
