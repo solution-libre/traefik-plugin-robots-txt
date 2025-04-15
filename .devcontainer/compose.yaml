@@ -44,9 +44,7 @@ services:
       - --entrypoints.http.address=:80
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
-      - '.:/plugins-local/src/github.com/solution-libre/traefik-plugin-robots-txt'
+      - '..:/plugins-local/src/github.com/solution-libre/traefik-plugin-robots-txt'
     labels:
       traefik.enable: true
       traefik.http.services.traefik.loadbalancer.server.port: 8080
-      traefik.http.middlewares.robots.plugin.traefik-plugin-robots-txt.modSecurityUrl: http://robots:8080
-      traefik.http.middlewares.robots.plugin.traefik-plugin-robots-txt.maxBodySize: 10485760
