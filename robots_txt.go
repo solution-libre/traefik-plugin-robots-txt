@@ -93,7 +93,7 @@ func (p *RobotsTxtPlugin) fetchAiRobotsTxt() (string, error) {
 
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			fmt.Printf("Error closing HTTP response: %v", err)
+			log.Printf("Error closing HTTP response: %v", err)
 		}
 	}()
 
