@@ -32,7 +32,7 @@ services:
       traefik.http.routers.website.middlewares: robots-txt
       traefik.http.services.website.loadbalancer.server.port: 80
       traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.additionalRules: "\nUser-agent: *\nDisallow: /toto/\n"
-      traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.aiRobotTxt: true
+      traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.aiRobotsTxt: true
 
   traefik:
     image: traefik:3

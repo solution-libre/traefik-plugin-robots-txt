@@ -13,7 +13,7 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-	AdditionalRules string `json:"headers,omitempty"`
+	AdditionalRules string `json:"additionalRules,omitempty"`
 	AiRobotsTxt     bool   `json:"aiRobotsTxt,omitempty"`
 }
 
