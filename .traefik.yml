@@ -8,3 +8,4 @@ summary: 'Traefik plugin to create, overwrite or complete the robots.txt file'
 
 testData:
   AdditionalRules: "\nUser-agent: *\nDisallow: /private/\n"
+  AiRobotsTxt: true
