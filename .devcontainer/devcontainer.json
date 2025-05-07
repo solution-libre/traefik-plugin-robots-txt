@@ -31,7 +31,8 @@
 			"extensions": [
 				"docker.docker",
 				"golang.go",
-				"ms-vscode.makefile-tools"
+				"ms-vscode.makefile-tools",
+				"davidanson.vscode-markdownlint"
 			]
 		}
 	}
