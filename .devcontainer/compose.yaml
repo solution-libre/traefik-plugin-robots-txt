@@ -29,7 +29,9 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.website.rule: PathPrefix(`/website`)
-      traefik.http.routers.website.middlewares: robots@docker
+      traefik.http.routers.website.middlewares: robots-txt
+      traefik.http.services.website.loadbalancer.server.port: 80
+      traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.additionalRules: "\nUser-agent: *\nDisallow: /private/\n"
 
   traefik:
     image: traefik:3

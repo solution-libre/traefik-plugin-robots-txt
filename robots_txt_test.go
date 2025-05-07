@@ -1,6 +1,7 @@
 package traefik_plugin_robots_txt_test
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -11,11 +12,7 @@ import (
 
 func TestDemo(t *testing.T) {
 	cfg := plugin.CreateConfig()
-	cfg.Headers["X-Host"] = "[[.Host]]"
-	cfg.Headers["X-Method"] = "[[.Method]]"
-	cfg.Headers["X-URL"] = "[[.URL]]"
-	cfg.Headers["X-URL"] = "[[.URL]]"
-	cfg.Headers["X-Demo"] = "test"
+	cfg.AdditionalRules = "\nUser-agent: *\nDisallow: /private/\n"
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
@@ -27,23 +24,14 @@ func TestDemo(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/robots.txt", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	handler.ServeHTTP(recorder, req)
 
-	assertHeader(t, req, "X-Host", "localhost")
-	assertHeader(t, req, "X-URL", "http://localhost")
-	assertHeader(t, req, "X-Method", "GET")
-	assertHeader(t, req, "X-Demo", "test")
-}
-
-func assertHeader(t *testing.T, req *http.Request, key, expected string) {
-	t.Helper()
-
-	if req.Header.Get(key) != expected {
-		t.Errorf("invalid header value: %s", req.Header.Get(key))
+	if !bytes.Equal([]byte("\nUser-agent: *\nDisallow: /private/\n"), recorder.Body.Bytes()) {
+		t.Errorf("got body %q, want %q", recorder.Body.Bytes(), "\nUser-agent: *\nDisallow: /private/\n")
 	}
 }

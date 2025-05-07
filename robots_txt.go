@@ -6,61 +6,66 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"text/template"
+	"strings"
 )
 
 // Config the plugin configuration.
 type Config struct {
-	Headers map[string]string `json:"headers,omitempty"`
+	AdditionalRules string `json:"headers,omitempty"`
+	LastModified    bool   `json:"lastModified,omitempty"`
 }
 
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		Headers: make(map[string]string),
+		AdditionalRules: "",
 	}
 }
 
-// Demo a Demo plugin.
-type Demo struct {
-	next     http.Handler
-	headers  map[string]string
-	name     string
-	template *template.Template
+type responseWriter struct {
+	buffer       bytes.Buffer
+	lastModified bool
+	wroteHeader  bool
+
+	http.ResponseWriter
+}
+
+type RobotsTxtPlugin struct {
+	additionalRules string
+	lastModified    bool
+	next            http.Handler
 }
 
 // New created a new Demo plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	if len(config.Headers) == 0 {
-		return nil, fmt.Errorf("headers cannot be empty")
+	if len(config.AdditionalRules) == 0 {
+		return nil, fmt.Errorf("additionnal rules cannot be empty")
 	}
 
-	return &Demo{
-		headers:  config.Headers,
-		next:     next,
-		name:     name,
-		template: template.New("demo").Delims("[[", "]]"),
+	return &RobotsTxtPlugin{
+		additionalRules: config.AdditionalRules,
+		next:            next,
 	}, nil
 }
 
-func (a *Demo) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	for key, value := range a.headers {
-		tmpl, err := a.template.Parse(value)
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		writer := &bytes.Buffer{}
-
-		err = tmpl.Execute(writer, req)
-		if err != nil {
-			http.Error(rw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		req.Header.Set(key, writer.String())
+func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	wrappedWriter := &responseWriter{
+		lastModified:   p.lastModified,
+		ResponseWriter: rw,
 	}
 
-	a.next.ServeHTTP(rw, req)
+	if strings.HasSuffix(req.URL.Path, "/robots.txt") {
+
+		p.next.ServeHTTP(wrappedWriter, req)
+
+		body := wrappedWriter.buffer.String()
+
+		completeContent := body + p.additionalRules
+
+		rw.Header().Set("Content-Type", "text/plain")
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(completeContent))
+	} else {
+		p.next.ServeHTTP(rw, req)
+	}
 }

@@ -1,6 +1,7 @@
 {
     "recommendations": [
         "docker.docker",
-        "golang.go"
+        "golang.go",
+        "ms-vscode.makefile-tools"
     ]
 }
