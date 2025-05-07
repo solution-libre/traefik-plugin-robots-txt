@@ -1,0 +1,14 @@
+name: Syntax
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  check-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Lint Markdown
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'

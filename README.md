@@ -31,7 +31,6 @@ experimental:
 
 ## Usage
 
-
 ```yaml
 # Dynamic configuration
 
