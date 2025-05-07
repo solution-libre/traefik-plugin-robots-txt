@@ -12,6 +12,9 @@
 	},
 
 	"features": {
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			"packages": "bash-completion"
+		},
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
 			"version": "latest",
 			"enableNonRootDocker": "true",
