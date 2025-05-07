@@ -15,6 +15,7 @@ import (
 type Config struct {
 	AdditionalRules string `json:"additionalRules,omitempty"`
 	AiRobotsTxt     bool   `json:"aiRobotsTxt,omitempty"`
+	LastModified    bool   `json:"lastModified,omitempty"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -22,19 +23,24 @@ func CreateConfig() *Config {
 	return &Config{
 		AdditionalRules: "",
 		AiRobotsTxt:     false,
+		LastModified:    false,
 	}
 }
 
 type responseWriter struct {
-	buffer bytes.Buffer
+	buffer       bytes.Buffer
+	lastModified bool
+	wroteHeader  bool
 
 	http.ResponseWriter
+	statusCode int
 }
 
 // RobotsTxtPlugin a robots.txt plugin.
 type RobotsTxtPlugin struct {
 	additionalRules string
 	aiRobotsTxt     bool
+	lastModified    bool
 	next            http.Handler
 }
 
@@ -47,21 +53,24 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	return &RobotsTxtPlugin{
 		additionalRules: config.AdditionalRules,
 		aiRobotsTxt:     config.AiRobotsTxt,
+		lastModified:    config.LastModified,
 		next:            next,
 	}, nil
 }
 
 func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	wrappedWriter := &responseWriter{
-		ResponseWriter: rw,
-	}
+	wrappedWriter := NewWrappedWriter(rw, p)
 
-	if !strings.HasSuffix(req.URL.Path, "/robots.txt") {
+	if !strings.HasSuffix(strings.ToLower(req.URL.Path), "/robots.txt") {
 		p.next.ServeHTTP(rw, req)
 		return
 	}
 
 	p.next.ServeHTTP(wrappedWriter, req)
+
+	if wrappedWriter.statusCode == http.StatusNotModified {
+		return
+	}
 
 	body := wrappedWriter.buffer.String()
 
@@ -81,6 +90,36 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Printf("unable to write body: %v", err)
 	}
+}
+
+func NewWrappedWriter(rw http.ResponseWriter, p *RobotsTxtPlugin) *responseWriter {
+	return &responseWriter{
+		lastModified:   p.lastModified,
+		ResponseWriter: rw,
+		statusCode:     http.StatusOK,
+	}
+}
+
+func (r *responseWriter) WriteHeader(statusCode int) {
+	if !r.lastModified {
+		r.ResponseWriter.Header().Del("Last-Modified")
+	}
+
+	r.wroteHeader = true
+	r.statusCode = statusCode
+
+	// Delegates the Content-Length Header creation to the final body write.
+	r.ResponseWriter.Header().Del("Content-Length")
+
+	r.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (r *responseWriter) Write(p []byte) (int, error) {
+	if !r.wroteHeader {
+		r.WriteHeader(http.StatusOK)
+	}
+
+	return r.buffer.Write(p)
 }
 
 func (p *RobotsTxtPlugin) fetchAiRobotsTxt() (string, error) {

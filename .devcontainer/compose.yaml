@@ -24,27 +24,44 @@ services:
   dummy:
     image: traefik/whoami
 
+  nginx:
+    image: nginx
+    labels:
+      traefik.enable: "true"
+      traefik.http.middlewares.nginx-robots-txt.plugin.traefik-plugin-robots-txt.aiRobotsTxt: true
+      traefik.http.routers.nginx.middlewares: nginx-robots-txt
+      traefik.http.routers.nginx.rule: PathPrefix(`/`)
+      traefik.http.services.nginx.loadbalancer.server.port: 80
+    volumes:
+      - ../files/robots.txt:/usr/share/nginx/html/robots.txt
+
   website:
     image: traefik/whoami
     labels:
       traefik.enable: true
+      traefik.http.middlewares.website-robots-txt.plugin.traefik-plugin-robots-txt.additionalRules: "\nUser-agent: *\nDisallow: /toto/\n"
+      traefik.http.middlewares.website-robots-txt.plugin.traefik-plugin-robots-txt.aiRobotsTxt: true
+      traefik.http.routers.website.middlewares: website-robots-txt
       traefik.http.routers.website.rule: PathPrefix(`/website`)
-      traefik.http.routers.website.middlewares: robots-txt
       traefik.http.services.website.loadbalancer.server.port: 80
-      traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.additionalRules: "\nUser-agent: *\nDisallow: /toto/\n"
-      traefik.http.middlewares.robots-txt.plugin.traefik-plugin-robots-txt.aiRobotsTxt: true
 
   traefik:
     image: traefik:3
     ports:
       - "8000:80"
       - "8080:8080"
-    command:
-      - --api.dashboard=true
-      - --api.insecure=true
-      - --experimental.localPlugins.traefik-plugin-robots-txt.moduleName=github.com/solution-libre/traefik-plugin-robots-txt
-      - --providers.docker=true
-      - --entrypoints.http.address=:80
+    # command:
+    #   - --api.dashboard=true
+    #   - --api.insecure=true
+    #   - --experimental.localPlugins.traefik-plugin-robots-txt.moduleName=github.com/solution-libre/traefik-plugin-robots-txt
+    #   - --providers.docker=true
+    #   - --entrypoints.http.address=:80
+    environment:
+      TRAEFIK_API_DASHBOARD: true
+      TRAEFIK_API_INSECURE: true
+      TRAEFIK_EXPERIMENTAL_LOCALPLUGINS_TRAEFIK-PLUGIN-ROBOTS-TXT_MODULENAME: github.com/solution-libre/traefik-plugin-robots-txt
+      TRAEFIK_PROVIDERS_DOCKER: true
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: :80
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - '..:/plugins-local/src/github.com/solution-libre/traefik-plugin-robots-txt'
