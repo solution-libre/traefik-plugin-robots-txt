@@ -3,7 +3,7 @@ package traefik_plugin_robots_txt_test
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -74,7 +74,7 @@ func TestNoOption(t *testing.T) {
 
 	_, err := plugin.New(ctx, next, cfg, "robots-txt-plugin")
 	if err == nil {
-		t.Fatal(fmt.Errorf("an error should raised up"))
+		t.Fatal(errors.New("an error should raised up"))
 	} else {
 		errMsg := "set additionnal rules or set ai.robot.txt to true"
 		if err.Error() != errMsg {

@@ -1,4 +1,4 @@
-// Package plugindemo a demo plugin.
+// Package traefik_plugin_robots_txt a plugin to complete robots.txt file.
 package traefik_plugin_robots_txt
 
 import (
@@ -56,26 +56,30 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		ResponseWriter: rw,
 	}
 
-	if strings.HasSuffix(req.URL.Path, "/robots.txt") {
-		p.next.ServeHTTP(wrappedWriter, req)
-
-		body := wrappedWriter.buffer.String()
-
-		if p.aiRobotsTxt {
-			aiRobotsTxt, err := p.fetchAiRobotsTxt()
-			if err != nil {
-				log.Printf("unable to fetch ai.robots.txt: %v", err)
-			}
-			body += aiRobotsTxt
-		}
-
-		body += p.additionalRules
-
-		rw.Header().Set("Content-Type", "text/plain")
-		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(body))
-	} else {
+	if !strings.HasSuffix(req.URL.Path, "/robots.txt") {
 		p.next.ServeHTTP(rw, req)
+		return
+	}
+
+	p.next.ServeHTTP(wrappedWriter, req)
+
+	body := wrappedWriter.buffer.String()
+
+	if p.aiRobotsTxt {
+		aiRobotsTxt, err := p.fetchAiRobotsTxt()
+		if err != nil {
+			log.Printf("unable to fetch ai.robots.txt: %v", err)
+		}
+		body += aiRobotsTxt
+	}
+
+	body += p.additionalRules
+
+	rw.Header().Set("Content-Type", "text/plain")
+	rw.WriteHeader(http.StatusOK)
+	_, err := rw.Write([]byte(body))
+	if err != nil {
+		log.Printf("unable to write body: %v", err)
 	}
 }
 
@@ -86,10 +90,15 @@ func (p *RobotsTxtPlugin) fetchAiRobotsTxt() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			fmt.Printf("Error closing HTTP response: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", nil // Aucun contenu existant, retourne une chaîne vide
+		return "", fmt.Errorf("HTTP status code is not 200")
 	}
 
 	content, err := io.ReadAll(resp.Body)

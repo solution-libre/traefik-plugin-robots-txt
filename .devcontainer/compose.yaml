@@ -1,6 +1,6 @@
 services:
   app:
-    image: mcr.microsoft.com/devcontainers/go:1-1.21-bookworm
+    image: mcr.microsoft.com/devcontainers/go:1-1.19-bookworm
 
     volumes:
       # Forwards the local Docker socket to the container.
