@@ -2,11 +2,13 @@
 package traefik_plugin_robots_txt
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -33,7 +35,8 @@ type responseWriter struct {
 	wroteHeader  bool
 
 	http.ResponseWriter
-	statusCode int
+	backendStatusCode int
+	statusCode        int
 }
 
 // RobotsTxtPlugin a robots.txt plugin.
@@ -59,20 +62,23 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	wrappedWriter := NewWrappedWriter(rw, p)
-
 	if !strings.HasSuffix(strings.ToLower(req.URL.Path), "/robots.txt") {
 		p.next.ServeHTTP(rw, req)
 		return
 	}
 
+	wrappedWriter := NewWrappedWriter(rw, p)
 	p.next.ServeHTTP(wrappedWriter, req)
 
-	if wrappedWriter.statusCode == http.StatusNotModified {
+	if wrappedWriter.backendStatusCode == http.StatusNotModified {
 		return
 	}
 
-	body := wrappedWriter.buffer.String()
+	var body string
+
+	if wrappedWriter.backendStatusCode != http.StatusNotFound {
+		body = wrappedWriter.buffer.String()
+	}
 
 	if p.aiRobotsTxt {
 		aiRobotsTxt, err := p.fetchAiRobotsTxt()
@@ -84,8 +90,6 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	body += p.additionalRules
 
-	rw.Header().Set("Content-Type", "text/plain")
-	rw.WriteHeader(http.StatusOK)
 	_, err := rw.Write([]byte(body))
 	if err != nil {
 		log.Printf("unable to write body: %v", err)
@@ -94,9 +98,10 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func NewWrappedWriter(rw http.ResponseWriter, p *RobotsTxtPlugin) *responseWriter {
 	return &responseWriter{
-		lastModified:   p.lastModified,
-		ResponseWriter: rw,
-		statusCode:     http.StatusOK,
+		lastModified:      p.lastModified,
+		ResponseWriter:    rw,
+		backendStatusCode: http.StatusOK,
+		statusCode:        http.StatusOK,
 	}
 }
 
@@ -106,12 +111,19 @@ func (r *responseWriter) WriteHeader(statusCode int) {
 	}
 
 	r.wroteHeader = true
-	r.statusCode = statusCode
+	r.backendStatusCode = statusCode
+	if statusCode != http.StatusNotFound {
+		r.statusCode = statusCode
+	} else {
+		r.statusCode = http.StatusOK
+	}
+
+	r.ResponseWriter.Header().Set("Content-Type", "text/plain")
 
 	// Delegates the Content-Length Header creation to the final body write.
 	r.ResponseWriter.Header().Del("Content-Length")
 
-	r.ResponseWriter.WriteHeader(statusCode)
+	r.ResponseWriter.WriteHeader(r.statusCode)
 }
 
 func (r *responseWriter) Write(p []byte) (int, error) {
@@ -120,6 +132,21 @@ func (r *responseWriter) Write(p []byte) (int, error) {
 	}
 
 	return r.buffer.Write(p)
+}
+
+func (r *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := r.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.ResponseWriter)
+	}
+
+	return hijacker.Hijack()
+}
+
+func (r *responseWriter) Flush() {
+	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }
 
 func (p *RobotsTxtPlugin) fetchAiRobotsTxt() (string, error) {
