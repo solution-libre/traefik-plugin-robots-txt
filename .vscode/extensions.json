@@ -4,6 +4,7 @@
         "golang.go",
         "ms-vscode.makefile-tools",
         "davidanson.vscode-markdownlint",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ymotongpoo.licenser"
     ]
 }

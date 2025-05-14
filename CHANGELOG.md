@@ -7,10 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- markdownlint-configure-file { "MD024": { "siblings_only": true } } -->
 
-## [0.1.0] 2025-05-07
+## [0.1.1] - 2025-05-14
+
+### Added
+
+- Manage missing robots.txt file
+
+## [0.1.0] - 2025-05-07
 
 ### Added
 
 - Plugin creation
 
+[0.1.1]: https://github.com/solution-libre/traefik-plugin-robots-txt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/solution-libre/traefik-plugin-robots-txt/releases/tag/v0.1.0
