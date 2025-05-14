@@ -36,6 +36,10 @@ func TestAdditionalRules(t *testing.T) {
 	if !bytes.Equal([]byte("\nUser-agent: *\nDisallow: /private/\n"), recorder.Body.Bytes()) {
 		t.Errorf("got body %q, want %q", recorder.Body.Bytes(), "\nUser-agent: *\nDisallow: /private/\n")
 	}
+
+	if recorder.Code != http.StatusOK {
+		t.Errorf("got status code %d, want %d", http.StatusOK, recorder.Code)
+	}
 }
 
 func TestAiRobotsTxt(t *testing.T) {
@@ -61,6 +65,10 @@ func TestAiRobotsTxt(t *testing.T) {
 
 	if strings.HasSuffix(recorder.Body.String(), "Disallow: /") {
 		t.Errorf("got body %s, want terminated by %s", recorder.Body.String(), "Disallow: /")
+	}
+
+	if recorder.Code != http.StatusOK {
+		t.Errorf("got status code %d, want %d", http.StatusOK, recorder.Code)
 	}
 }
 
