@@ -107,11 +107,11 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			body = wrappedWriter.buffer.String()
 		}
 		if p.aiRobotsTxt {
-			aiContent, err := p.fetchAiRobotsTxt()
+			aiRobotsTxt, err := p.fetchAiRobotsTxt()
 			if err != nil {
 				log.Printf("unable to fetch ai.robots.txt: %v", err)
 			}
-			body += aiContent
+			body += aiRobotsTxt
 		}
 		body += p.customRules
 	}
