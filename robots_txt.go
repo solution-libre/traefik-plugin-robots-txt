@@ -32,6 +32,7 @@ import (
 // Config the plugin configuration.
 type Config struct {
 	AdditionalRules string `json:"additionalRules,omitempty"`
+	OverwriteRules  string `json:"overwriteRules,omitempty"`
 	AiRobotsTxt     bool   `json:"aiRobotsTxt,omitempty"`
 	LastModified    bool   `json:"lastModified,omitempty"`
 }
@@ -40,6 +41,7 @@ type Config struct {
 func CreateConfig() *Config {
 	return &Config{
 		AdditionalRules: "",
+		OverwriteRules:  "",
 		AiRobotsTxt:     false,
 		LastModified:    false,
 	}
@@ -58,6 +60,7 @@ type responseWriter struct {
 // RobotsTxtPlugin a robots.txt plugin.
 type RobotsTxtPlugin struct {
 	additionalRules string
+	overwriteRules  string
 	aiRobotsTxt     bool
 	lastModified    bool
 	next            http.Handler
@@ -65,12 +68,13 @@ type RobotsTxtPlugin struct {
 
 // New created a new Demo plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	if len(config.AdditionalRules) == 0 && !config.AiRobotsTxt {
-		return nil, fmt.Errorf("set additionnal rules or set ai.robot.txt to true")
+	if len(config.AdditionalRules) == 0 && !config.AiRobotsTxt && len(config.OverwriteRules) == 0 {
+		return nil, fmt.Errorf("set additionalRules, overwriteRules, or set aiRobotsTxt to true")
 	}
 
 	return &RobotsTxtPlugin{
 		additionalRules: config.AdditionalRules,
+		overwriteRules:  config.OverwriteRules,
 		aiRobotsTxt:     config.AiRobotsTxt,
 		lastModified:    config.LastModified,
 		next:            next,
@@ -97,19 +101,24 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	var body string
 
-	if wrappedWriter.backendStatusCode != http.StatusNotFound {
-		body = wrappedWriter.buffer.String()
-	}
-
-	if p.aiRobotsTxt {
-		aiRobotsTxt, err := p.fetchAiRobotsTxt()
-		if err != nil {
-			log.Printf("unable to fetch ai.robots.txt: %v", err)
+	//if OverwriteRules is set, use it and skip everything else
+	if p.overwriteRules != "" {
+		body = p.overwriteRules
+	} else {
+		if wrappedWriter.backendStatusCode != http.StatusNotFound {
+			body = wrappedWriter.buffer.String()
 		}
-		body += aiRobotsTxt
-	}
 
-	body += p.additionalRules
+		if p.aiRobotsTxt {
+			aiRobotsTxt, err := p.fetchAiRobotsTxt()
+			if err != nil {
+				log.Printf("unable to fetch ai.robots.txt: %v", err)
+			}
+			body += aiRobotsTxt
+		}
+
+		body += p.additionalRules
+	}
 
 	_, err := rw.Write([]byte(body))
 	if err != nil {
