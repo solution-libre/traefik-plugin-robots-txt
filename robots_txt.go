@@ -69,7 +69,7 @@ type RobotsTxtPlugin struct {
 // New created a new Demo plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.AdditionalRules) == 0 && !config.AiRobotsTxt && len(config.OverwriteRules) == 0 {
-		return nil, fmt.Errorf("set additionalRules, overwriteRules, or set aiRobotsTxt to true")
+		return nil, fmt.Errorf("set additionalRules, overwriteRules, or set ai.robot.txt to true")
 	}
 
 	return &RobotsTxtPlugin{
