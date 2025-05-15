@@ -100,7 +100,9 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var body string
+
 	if p.overwrite {
+		// Overwrite is true, fetch AI robots.txt if enabled
 		if p.aiRobotsTxt {
 			aiRobotsTxt, err := p.fetchAiRobotsTxt()
 			if err != nil {
