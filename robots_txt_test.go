@@ -28,7 +28,7 @@ import (
 	plugin "github.com/solution-libre/traefik-plugin-robots-txt"
 )
 
-func TestAdditionalRules(t *testing.T) {
+func TestCustomRules(t *testing.T) {
 	cfg := plugin.CreateConfig()
 	cfg.CustomRules = "\nUser-agent: *\nDisallow: /private/\n"
 

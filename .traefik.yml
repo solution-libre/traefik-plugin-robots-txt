@@ -7,5 +7,5 @@ import: github.com/solution-libre/traefik-plugin-robots-txt
 summary: 'Traefik plugin to create, overwrite or complete the robots.txt file'
 
 testData:
-  AdditionalRules: "\nUser-agent: *\nDisallow: /private/\n"
   AiRobotsTxt: true
+  CustomRules: "\nUser-agent: *\nDisallow: /private/\n"

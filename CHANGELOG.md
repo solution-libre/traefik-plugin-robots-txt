@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- ⚠️ `additionalRules` option has been renamed  `customRules`
 - Work only on the robots.txt file at the root
 
 ## [0.1.1] - 2025-05-14
