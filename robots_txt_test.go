@@ -100,7 +100,7 @@ func TestNoOption(t *testing.T) {
 	if err == nil {
 		t.Fatal(errors.New("an error should raised up"))
 	} else {
-		errMsg := "set additionnal rules or set ai.robot.txt to true"
+		errMsg := "set customRules or set ai.robot.txt to true"
 		if err.Error() != errMsg {
 			t.Errorf("got err message %s, want %s", err.Error(), errMsg)
 		}
