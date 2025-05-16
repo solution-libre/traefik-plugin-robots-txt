@@ -26,7 +26,7 @@ experimental:
   plugins:
     example:
       moduleName: github.com/solution-libre/traefik-plugin-robots-txt
-      version: v0.1.2
+      version: v0.2.0
 ```
 
 ## Usage
