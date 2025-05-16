@@ -49,8 +49,11 @@ func TestAdditionalRules(t *testing.T) {
 
 	handler.ServeHTTP(recorder, req)
 
-	if !bytes.Equal([]byte("\nUser-agent: *\nDisallow: /private/\n"), recorder.Body.Bytes()) {
-		t.Errorf("got body %q, want %q", recorder.Body.Bytes(), "\nUser-agent: *\nDisallow: /private/\n")
+	wantedRes := "\n# The following content was added on the fly by the Robots.txt Traefik plugin: " +
+		"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n" +
+		cfg.CustomRules
+	if !bytes.Equal([]byte(wantedRes), recorder.Body.Bytes()) {
+		t.Errorf("got body %q, want %q", recorder.Body.Bytes(), wantedRes)
 	}
 
 	if recorder.Code != http.StatusOK {
