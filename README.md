@@ -26,7 +26,7 @@ experimental:
   plugins:
     example:
       moduleName: github.com/solution-libre/traefik-plugin-robots-txt
-      version: v0.1.1
+      version: v0.1.2
 ```
 
 ## Usage
@@ -59,12 +59,11 @@ http:
 
 ## Reference
 
-<!-- markdownlint-disable MD013 -->
-| Name            | Description                                | Default value | Example                                  |
-| --------------- | ------------------------------------------ | ------------- | ---------------------------------------- |
-| aiRobotsTxt     | Enable the retrieval of ai.robots.txt list | `false`       | `true`                                   |
-| additionalRules | Add additianl rules at the end of the file |               | `\nUser-agent: *\nDisallow: /private/\n` |
-<!-- markdownlint-enable MD013 -->
+| Name        | Description                                 | Default value | Example                                  |
+| ------------| ------------------------------------------- | ------------- | ---------------------------------------- |
+| aiRobotsTxt | Enable the retrieval of ai.robots.txt list  | `false`       | `true`                                   |
+| customRules | Add custom rules at the end of the file     |               | `\nUser-agent: *\nDisallow: /private/\n` |
+| overwrite   | Remove the original robots.txt file content | `false`       | `true`                                   |
 
 ## Development
 

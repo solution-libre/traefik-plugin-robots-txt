@@ -82,7 +82,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if !strings.HasSuffix(strings.ToLower(req.URL.Path), "/robots.txt") {
+	if strings.ToLower(req.URL.Path) != "/robots.txt" {
 		p.next.ServeHTTP(rw, req)
 		return
 	}
@@ -101,29 +101,21 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	var body string
 
-	if p.overwrite {
-		// Overwrite is true, fetch AI robots.txt if enabled
-		if p.aiRobotsTxt {
-			aiRobotsTxt, err := p.fetchAiRobotsTxt()
-			if err != nil {
-				log.Printf("unable to fetch ai.robots.txt: %v", err)
-			}
-			body += aiRobotsTxt
-		}
-		body += p.customRules
-	} else {
-		if wrappedWriter.backendStatusCode != http.StatusNotFound {
-			body = wrappedWriter.buffer.String()
-		}
-		if p.aiRobotsTxt {
-			aiRobotsTxt, err := p.fetchAiRobotsTxt()
-			if err != nil {
-				log.Printf("unable to fetch ai.robots.txt: %v", err)
-			}
-			body += aiRobotsTxt
-		}
-		body += p.customRules
+	if !p.overwrite && wrappedWriter.backendStatusCode != http.StatusNotFound {
+		body = wrappedWriter.buffer.String() + "\n"
 	}
+
+	body += "# The following content was added on the fly by the Robots.txt Traefik plugin: " +
+		"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n"
+
+	if p.aiRobotsTxt {
+		aiRobotsTxt, err := p.fetchAiRobotsTxt()
+		if err != nil {
+			log.Printf("unable to fetch ai.robots.txt: %v", err)
+		}
+		body += aiRobotsTxt
+	}
+	body += p.customRules
 
 	_, err := rw.Write([]byte(body))
 	if err != nil {
