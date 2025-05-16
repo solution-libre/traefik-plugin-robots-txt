@@ -69,7 +69,7 @@ type RobotsTxtPlugin struct {
 // New created a new Demo plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.CustomRules) == 0 && !config.AiRobotsTxt {
-		return nil, fmt.Errorf("set customRules or set ai.robot.txt to true")
+		return nil, fmt.Errorf("set customRules or set aiRobotsTxt to true")
 	}
 
 	return &RobotsTxtPlugin{
