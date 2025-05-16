@@ -30,7 +30,7 @@ import (
 
 func TestAdditionalRules(t *testing.T) {
 	cfg := plugin.CreateConfig()
-	cfg.AdditionalRules = "\nUser-agent: *\nDisallow: /private/\n"
+	cfg.CustomRules = "\nUser-agent: *\nDisallow: /private/\n"
 
 	ctx := context.Background()
 	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
@@ -90,7 +90,7 @@ func TestAiRobotsTxt(t *testing.T) {
 
 func TestNoOption(t *testing.T) {
 	cfg := plugin.CreateConfig()
-	cfg.AdditionalRules = ""
+	cfg.CustomRules = ""
 	cfg.AiRobotsTxt = false
 
 	ctx := context.Background()
