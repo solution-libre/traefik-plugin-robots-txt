@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- markdownlint-configure-file { "MD024": { "siblings_only": true } } -->
 
+## [0.2.1] - 2025-05-21
+
+### Fixed
+
+- Removal of capital letters from the first letter of testData
+- Fix typo in README examples
+
 ## [0.2.0] - 2025-05-16
 
 ### Added
@@ -30,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Plugin creation
 
+[0.2.1]: https://github.com/solution-libre/traefik-plugin-robots-txt/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/solution-libre/traefik-plugin-robots-txt/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/solution-libre/traefik-plugin-robots-txt/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/solution-libre/traefik-plugin-robots-txt/releases/tag/v0.1.0
