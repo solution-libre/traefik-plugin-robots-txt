@@ -17,14 +17,12 @@ Robots.txt is a middleware plugin for [Traefik](https://traefik.io/) which add r
 
 ## Setup
 
-### Configuration
-
 ```yaml
 # Static configuration
 
 experimental:
   plugins:
-    example:
+    robots-txt:
       moduleName: github.com/solution-libre/traefik-plugin-robots-txt
       version: v0.2.0
 ```
@@ -42,7 +40,7 @@ http:
       entryPoints:
         - web
       middlewares:
-        - robots-txt
+        - my-robots-txt
 
   services:
    service-foo:
@@ -51,9 +49,9 @@ http:
           - url: http://127.0.0.1
   
   middlewares:
-    robots-txt:
+    my-robots-txt:
       plugin:
-        traefik-plugin-robots-txt:
+        robots-txt:
           aiRobotsTxt: true
 ```
 
