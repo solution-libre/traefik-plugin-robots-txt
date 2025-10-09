@@ -26,7 +26,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
+	"time"
+
+	"github.com/patrickmn/go-cache"
 )
 
 // Config the plugin configuration.
@@ -35,6 +39,8 @@ type Config struct {
 	Overwrite    bool   `json:"overwrite,omitempty"`
 	AiRobotsTxt  bool   `json:"aiRobotsTxt,omitempty"`
 	LastModified bool   `json:"lastModified,omitempty"`
+	CacheTTL     int    `json:"cacheTTL,omitempty"`
+	Block        bool   `json:"block,omitempty"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -44,6 +50,8 @@ func CreateConfig() *Config {
 		Overwrite:    false,
 		AiRobotsTxt:  false,
 		LastModified: false,
+		CacheTTL:     30,
+		Block:        false,
 	}
 }
 
@@ -63,7 +71,67 @@ type RobotsTxtPlugin struct {
 	overwrite    bool
 	aiRobotsTxt  bool
 	lastModified bool
+	cacheTTL     int
+	block        bool
 	next         http.Handler
+}
+
+var (
+	c        *cache.Cache
+	agentReg = regexp.MustCompile("^User-agent: (.+)$")
+)
+
+func getCachedAI() (string, error) {
+	foo, found := c.Get("aiContent")
+	if found {
+		return foo.(string), nil
+	}
+	aiRobotsTxt, err := fetchAiRobotsTxt()
+	if err != nil {
+		log.Printf("unable to fetch ai.robots.txt: %v", err)
+		return "", err
+	}
+	c.Set("aiContent", aiRobotsTxt, cache.DefaultExpiration)
+	return aiRobotsTxt, nil
+}
+
+func GetRegex() (*regexp.Regexp, error) {
+	foo, found := c.Get("reg")
+	if found {
+		return foo.(*regexp.Regexp), nil
+	}
+	// TODO
+	aiResp, aiErr := getCachedAI()
+	if aiErr != nil {
+		return nil, aiErr
+	}
+
+	quotedBotPatterns := []string{}
+
+	for _, line := range strings.Split(strings.TrimSuffix(aiResp, "\n"), "\n") {
+		match := agentReg.FindStringSubmatch(line)
+		if match != nil {
+			quotedBotPatterns = append(quotedBotPatterns, regexp.QuoteMeta(match[1]))
+		}
+	}
+	if len(quotedBotPatterns) == 0 {
+		log.Printf("No matched User-Agents from ai.robots.txt ?")
+		return nil, nil
+	}
+	matcherCode := fmt.Sprintf("(?i)(%s)", strings.Join(quotedBotPatterns, "|"))
+	matcher, err := regexp.Compile(matcherCode)
+	if err != nil {
+		log.Printf("unable to compile regex: %v", err)
+		return nil, err
+	}
+	c.Set("reg", matcher, cache.DefaultExpiration)
+	return matcher, nil
+}
+
+func BlockAgent(res *http.ResponseWriter) {
+	(*res).Header().Set("Content-Type", "text/plain; charset=utf-8")
+	(*res).WriteHeader(http.StatusForbidden)
+	_, _ = (*res).Write([]byte("Access denied"))
 }
 
 // New created a new Demo plugin.
@@ -72,17 +140,36 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		return nil, fmt.Errorf("set customRules or set aiRobotsTxt to true")
 	}
 
+	c = cache.New(time.Duration(config.CacheTTL)*time.Minute, 10*time.Minute)
+
 	return &RobotsTxtPlugin{
 		customRules:  config.CustomRules,
 		overwrite:    config.Overwrite,
 		aiRobotsTxt:  config.AiRobotsTxt,
 		lastModified: config.LastModified,
+		cacheTTL:     config.CacheTTL,
+		block:        config.Block,
 		next:         next,
 	}, nil
 }
 
 func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.ToLower(req.URL.Path) != "/robots.txt" {
+
+		if p.block && p.aiRobotsTxt {
+			for _, uaHeader := range req.Header.Values("User-Agent") {
+				agentMatch, err := GetRegex()
+				if err == nil {
+					if agentMatch != nil && agentMatch.MatchString(uaHeader) {
+						BlockAgent(&rw)
+						return
+					}
+				} else {
+					log.Printf("unable to match against User-Agent: %v", err)
+				}
+			}
+		}
+
 		p.next.ServeHTTP(rw, req)
 		return
 	}
@@ -109,7 +196,7 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n"
 
 	if p.aiRobotsTxt {
-		aiRobotsTxt, err := p.fetchAiRobotsTxt()
+		aiRobotsTxt, err := getCachedAI()
 		if err != nil {
 			log.Printf("unable to fetch ai.robots.txt: %v", err)
 		}
@@ -167,7 +254,7 @@ func (r *responseWriter) Flush() {
 	}
 }
 
-func (p *RobotsTxtPlugin) fetchAiRobotsTxt() (string, error) {
+func fetchAiRobotsTxt() (string, error) {
 	backendURL := "https://raw.githubusercontent.com/ai-robots-txt/ai.robots.txt/refs/heads/main/robots.txt"
 
 	resp, err := http.Get(backendURL)

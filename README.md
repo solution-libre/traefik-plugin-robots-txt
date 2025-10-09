@@ -15,6 +15,8 @@
 Robots.txt is a middleware plugin for [Traefik](https://traefik.io/) which add rules based on
 [ai.robots.txt](https://github.com/ai-robots-txt/ai.robots.txt/) or on custom rules in `/robots.txt` of your website.
 
+It can optionally block requests from any User Agent matched from `ai.robots.txt`
+
 ## Setup
 
 ```yaml
@@ -57,11 +59,13 @@ http:
 
 ## Reference
 
-| Name        | Description                                 | Default value | Example                                  |
-| ------------| ------------------------------------------- | ------------- | ---------------------------------------- |
-| aiRobotsTxt | Enable the retrieval of ai.robots.txt list  | `false`       | `true`                                   |
-| customRules | Add custom rules at the end of the file     |               | `\nUser-agent: *\nDisallow: /private/\n` |
-| overwrite   | Remove the original robots.txt file content | `false`       | `true`                                   |
+| Name        | Description                                                                        | Default value | Example                                  |
+| ----------- | ---------------------------------------------------------------------------------- | ------------- | ---------------------------------------- |
+| aiRobotsTxt | Enable the retrieval of ai.robots.txt list                                         | `false`       | `true`                                   |
+| customRules | Add custom rules at the end of the file                                            |               | `\nUser-agent: *\nDisallow: /private/\n` |
+| overwrite   | Remove the original robots.txt file content                                        | `false`       | `true`                                   |
+| block       | Return 403 for non `/robots.txt` routes if request UA matches from `ai.robots.txt` | `false`       | `true`                                   |
+| cacheTTL    | Number of minutes to cache `ai.robots.txt`                                         | 30            | 300                                      |
 
 ## Development
 

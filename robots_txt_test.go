@@ -91,6 +91,34 @@ func TestAiRobotsTxt(t *testing.T) {
 	}
 }
 
+func TestHttpBlock(t *testing.T) {
+	cfg := plugin.CreateConfig()
+	cfg.AiRobotsTxt = true
+	cfg.Block = true
+
+	ctx := context.Background()
+	next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
+
+	handler, err := plugin.New(ctx, next, cfg, "robots-txt-plugin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	recorder := httptest.NewRecorder()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/anything", nil)
+	req.Header.Set("User-Agent", "ChatGPT-User")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusForbidden {
+		t.Errorf("got status code %d, want %d", http.StatusOK, recorder.Code)
+	}
+}
+
 func TestNoOption(t *testing.T) {
 	cfg := plugin.CreateConfig()
 	cfg.CustomRules = ""
