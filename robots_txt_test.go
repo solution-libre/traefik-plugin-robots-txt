@@ -109,3 +109,65 @@ func TestNoOption(t *testing.T) {
 		}
 	}
 }
+
+func TestEnableComment(t *testing.T) {
+	tests := []struct {
+		name          string
+		enableComment bool
+		wantComment   bool
+	}{
+		{
+			name:          "comment enabled",
+			enableComment: true,
+			wantComment:   true,
+		},
+		{
+			name:          "comment disabled",
+			enableComment: false,
+			wantComment:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := plugin.CreateConfig()
+			cfg.CustomRules = "\nUser-agent: *\nDisallow: /private/\n"
+			cfg.EnableComment = tt.enableComment
+
+			ctx := context.Background()
+			next := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {})
+
+			handler, err := plugin.New(ctx, next, cfg, "robots-txt-plugin")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			recorder := httptest.NewRecorder()
+
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost/robots.txt", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			handler.ServeHTTP(recorder, req)
+
+			expectedComment := "# The following content was added on the fly by the Robots.txt Traefik plugin: " +
+				"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n"
+
+			bodyStr := recorder.Body.String()
+			hasComment := strings.Contains(bodyStr, expectedComment)
+
+			if tt.wantComment && !hasComment {
+				t.Errorf("expected comment to be present in response body, but it was not found")
+			}
+
+			if !tt.wantComment && hasComment {
+				t.Errorf("expected comment to be absent from response body, but it was found")
+			}
+
+			if recorder.Code != http.StatusOK {
+				t.Errorf("got status code %d, want %d", recorder.Code, http.StatusOK)
+			}
+		})
+	}
+}

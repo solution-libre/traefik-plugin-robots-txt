@@ -57,11 +57,12 @@ http:
 
 ## Reference
 
-| Name        | Description                                 | Default value | Example                                  |
-| ------------| ------------------------------------------- | ------------- | ---------------------------------------- |
-| aiRobotsTxt | Enable the retrieval of ai.robots.txt list  | `false`       | `true`                                   |
-| customRules | Add custom rules at the end of the file     |               | `\nUser-agent: *\nDisallow: /private/\n` |
-| overwrite   | Remove the original robots.txt file content | `false`       | `true`                                   |
+| Name          | Description                                         | Default value | Example                                  |
+| ------------- | --------------------------------------------------- | ------------- | ---------------------------------------- |
+| aiRobotsTxt   | Enable the retrieval of ai.robots.txt list          | `false`       | `true`                                   |
+| customRules   | Add custom rules at the end of the file             |               | `\nUser-agent: *\nDisallow: /private/\n` |
+| overwrite     | Remove the original robots.txt file content         | `false`       | `true`                                   |
+| enableComment | Write comment that identify plugins in `robots.txt` | `true`        | `false`                                  |
 
 ## Development
 

@@ -31,19 +31,21 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-	CustomRules  string `json:"customRules,omitempty"`
-	Overwrite    bool   `json:"overwrite,omitempty"`
-	AiRobotsTxt  bool   `json:"aiRobotsTxt,omitempty"`
-	LastModified bool   `json:"lastModified,omitempty"`
+	CustomRules   string `json:"customRules,omitempty"`
+	Overwrite     bool   `json:"overwrite,omitempty"`
+	AiRobotsTxt   bool   `json:"aiRobotsTxt,omitempty"`
+	LastModified  bool   `json:"lastModified,omitempty"`
+	EnableComment bool   `json:"enableComment,omitempty"`
 }
 
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		CustomRules:  "",
-		Overwrite:    false,
-		AiRobotsTxt:  false,
-		LastModified: false,
+		CustomRules:   "",
+		Overwrite:     false,
+		AiRobotsTxt:   false,
+		LastModified:  false,
+		EnableComment: true,
 	}
 }
 
@@ -59,11 +61,12 @@ type responseWriter struct {
 
 // RobotsTxtPlugin a robots.txt plugin.
 type RobotsTxtPlugin struct {
-	customRules  string
-	overwrite    bool
-	aiRobotsTxt  bool
-	lastModified bool
-	next         http.Handler
+	customRules   string
+	overwrite     bool
+	aiRobotsTxt   bool
+	lastModified  bool
+	enableComment bool
+	next          http.Handler
 }
 
 // New created a new Demo plugin.
@@ -73,11 +76,12 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	}
 
 	return &RobotsTxtPlugin{
-		customRules:  config.CustomRules,
-		overwrite:    config.Overwrite,
-		aiRobotsTxt:  config.AiRobotsTxt,
-		lastModified: config.LastModified,
-		next:         next,
+		customRules:   config.CustomRules,
+		overwrite:     config.Overwrite,
+		aiRobotsTxt:   config.AiRobotsTxt,
+		lastModified:  config.LastModified,
+		enableComment: config.EnableComment,
+		next:          next,
 	}, nil
 }
 
@@ -105,8 +109,10 @@ func (p *RobotsTxtPlugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		body = wrappedWriter.buffer.String() + "\n"
 	}
 
-	body += "# The following content was added on the fly by the Robots.txt Traefik plugin: " +
-		"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n"
+	if p.enableComment {
+		body += "# The following content was added on the fly by the Robots.txt Traefik plugin: " +
+			"https://plugins.traefik.io/plugins/681b2f3fba3486128fc34fae/robots-txt-plugin\n"
+	}
 
 	if p.aiRobotsTxt {
 		aiRobotsTxt, err := p.fetchAiRobotsTxt()
